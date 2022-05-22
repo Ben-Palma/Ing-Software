@@ -20,7 +20,7 @@ namespace SCyC_Web
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
     [System.ComponentModel.ToolboxItem(false)]
     // Para permitir que se llame a este servicio web desde un script, usando ASP.NET AJAX, quite la marca de comentario de la línea siguiente. 
-    // [System.Web.Script.Services.ScriptService]
+    [System.Web.Script.Services.ScriptService]
     public class FACTURA_ELECTRONICA : System.Web.Services.WebService
     {
 
@@ -31,12 +31,52 @@ namespace SCyC_Web
         }
 
         [WebMethod]
-        public XmlDocument EmitirDTE(string nombre_emisor, string nit_emisor, string dir_emisor, string cod_auth, string num_serie, string moneda, string productos, string descuentos)
+        public XmlDocument EmitirDTE(string nombre_emisor, string nit_emisor, string dir_emisor, string cod_auth, string num_serie, string moneda, string productos, string descuentos, string email)
         {
             //string DTE = "";
             XmlDocument DTE = CreateXMLFile(nombre_emisor, nit_emisor, dir_emisor, cod_auth, num_serie, moneda, productos, descuentos);
+            
+            //Se guarda en la base de datos
+            guardarDatosBd(num_serie, nombre_emisor, cod_auth, Serializar(DTE));
 
-            return DTE;
+            //se envía correo
+            string _total = "";
+            string totalLetras = "";
+            XmlNode MyNode = DTE.SelectSingleNode("Factura_DTE/Productos/Total");
+            _total = MyNode.InnerText;
+
+            XmlNode MyNode2 = DTE.SelectSingleNode("Factura_DTE/Productos/Total_en_Letras");
+            totalLetras = MyNode2.InnerText;
+
+            //genero el pdf de factura y la envío            
+            List<ModeloReporte> _li = new List<ModeloReporte>();
+            ModeloReporte rd = new ModeloReporte();
+
+            _li = generarFacturaPDF(nombre_emisor, nit_emisor, cod_auth, num_serie, descuentos, email, _total);            
+            enviarEmail(email, nombre_emisor, nit_emisor,num_serie, totalLetras, obtenerDireccionLista(_li));
+
+            return DTE;            
+        }
+
+        //registrar facturas
+        [WebMethod]
+        public string guardarDatosBd(string numSerie, string nombreEmisor, string codAuth, string xmlDocument64)
+        {
+            MySqlConnection conexionBD = new MySqlConnection("server = servidor ; database = bd_ingsoft ; Uid = usuario_bd ; pwd = constraseña_de_bd ");
+            string estado = "";
+
+            //inserto datos a la base de datos
+            conexionBD.Open();
+            MySqlCommand comando = new MySqlCommand("insert into  `bd_ingsoft`.`factura_data` (numSerie, nombreEmisor, codAutorizacion, xmlFactura) values (@numSerie, @nombreEmisor, @codAutorizacion, @xmlFactura)", conexionBD);
+            comando.Parameters.AddWithValue("@numSerie", numSerie);
+            comando.Parameters.AddWithValue("@nombreEmisor", nombreEmisor);
+            comando.Parameters.AddWithValue("@codAutorizacion", codAuth);
+            comando.Parameters.AddWithValue("@xmlFactura", xmlDocument64);
+            
+            comando.ExecuteNonQuery();
+
+            conexionBD.Close();
+            return estado;
         }
 
         public XmlDocument CreateXMLFile(string nombre_emisor, string nit_emisor, string dir_emisor, string cod_auth, string num_serie, string moneda, string productos, string descuentos)
