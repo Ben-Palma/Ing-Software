@@ -78,6 +78,62 @@ namespace SCyC_Web
             conexionBD.Close();
             return estado;
         }
+        //creacion de PDF's
+        [WebMethod]
+        public List<ModeloReporte> generarFacturaPDF(string nombre_emisor, string nit_emisor, string cod_auth, string num_serie, string descuentos, string email, string _total)
+        {
+            List<ModeloReporte> _li = new List<ModeloReporte>();
+            ModeloReporte rd = new ModeloReporte();
+
+            try
+            {
+                string html = "";
+                //ES EL HTML DE LA FACTURA
+                html = @"<!DOCTYPE html><html><head> <meta charset='utf-8'/> <title></title> <style>body{margin-top: 20px;}</style></head><body> <div bgcolor='#f6f6f6' style='color: #333; height: 100%; width: 100%;' height='100%' width='100%'> <table bgcolor='#f6f6f6' cellspacing='0' style='border-collapse: collapse; padding: 40px; width: 100%;' width='100%'> <tbody> <tr> <td width='5px' style='padding: 0;'></td><td style='clear: both; display: block; margin: 0 auto; max-width: 600px; padding: 10px 0;'> <table width='100%' cellspacing='0' style='border-collapse: collapse;'> <tbody> <tr> <td style='padding: 0;'> <a href='#' style='color: #348eda;' target='_blank'> <img src='//ssl.gstatic.com/accounts/ui/logo_2x.png' alt='Bootdey.com' style='height: 50px; max-width: 100%; width: 157px;' height='50' width='157'/> </a> </td><td style='color: #999; font-size: 12px; padding: 0; text-align: right;' align='right'> Empresa Facturacion<br/> FACTURA#" + num_serie + "<br/> Cod Auth: " + cod_auth + " </td></tr></tbody> </table> </td><td width='5px' style='padding: 0;'></td></tr><tr> <td width='5px' style='padding: 0;'></td><td bgcolor='#FFFFFF' style='border: 1px solid #000; clear: both; display: block; margin: 0 auto; max-width: 600px; padding: 0;'> <table width='100%' style='background: #f9f9f9; border-bottom: 1px solid #eee; border-collapse: collapse; color: #999;'> <tbody> <tr> <td width='50%' style='padding: 20px;'><strong style='color: #333; font-size: 24px;'>" + nombre_emisor + "</strong> Nit: " + nit_emisor + " </td><td align='right' width='50%' style='padding: 20px;'>Email: <span class='il'>" + email + "</span></td></tr></tbody> </table> </td><td style='padding: 0;'></td><td width='5px' style='padding: 0;'></td></tr><tr> <td width='5px' style='padding: 0;'></td><td style='border: 1px solid #000; border-top: 0; clear: both; display: block; margin: 0 auto; max-width: 600px; padding: 0;'> <table cellspacing='0' style='border-collapse: collapse; border-left: 1px solid #000; margin: 0 auto; max-width: 600px;'> <tbody> <tr> <td valign='top' style='padding: 20px;'> <h3 style=' border-bottom: 1px solid #000; color: #000; font-family: 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; font-size: 18px; font-weight: bold; line-height: 1.2; margin: 0; margin-bottom: 15px; padding-bottom: 5px; '> DESCRIPCION </h3> <table cellspacing='0' style='border-collapse: collapse; margin-bottom: 40px;'> <tbody> <tr> <td style='padding: 5px 60px;'>Compra realizada en linea </td><td align='right' style='padding: 5px 0;'>Q" + _total + "</td></tr><tr> <td style='padding: 5px 0;'>---</td><td align='right' style='padding: 5px 0;'>---</td></tr><tr> <td style='padding: 5px 0;'>Descuentos</td><td align='right' style='padding: 5px 0;'>Q" + descuentos + "</td></tr><tr> <td style='border-bottom: 2px solid #000; border-top: 2px solid #000; font-weight: bold; padding: 5px 0;'>Total Pagado</td><td align='right' style='border-bottom: 2px solid #000; border-top: 2px solid #000; font-weight: bold; padding: 5px 0;'>Q" + _total + "</td></tr></tbody> </table> </td></tr></tbody> </table> </td><td width='5px' style='padding: 0;'></td></tr><tr style='color: #666; font-size: 12px;'> <td width='5px' style='padding: 10px 0;'></td><td style='clear: both; display: block; margin: 0 auto; max-width: 600px; padding: 10px 0;'> <table width='100%' cellspacing='0' style='border-collapse: collapse;'> <tbody> <tr> <td width='40%' valign='top' style='padding: 10px 0;'> <h4 style='margin: 0;'>Dudas?</h4> <p style='color: #666; font-size: 12px; font-weight: normal; margin-bottom: 10px;'> Envie correo a <a href='#' style='color: #666;' target='_blank'> soporte@infile.com </a> con sus preguntas. </p></td><td width='10%' style='padding: 10px 0;'>&nbsp;</td><td width='40%' valign='top' style='padding: 10px 0;'> <h4 style='margin: 0;'><span class='il'>ING_SOFTWARE</span> Grupo 2</h4> <p style='color: #666; font-size: 12px; font-weight: normal; margin-bottom: 10px;'> <a href='#'>Antigua Guatemala, Antigua</a> </p></td></tr></tbody> </table> </td><td width='5px' style='padding: 10px 0;'></td></tr></tbody> </table> </div></body></html>";
+                
+                string fpath = Server.MapPath("\\RUTA_DONDE_SE_GUARDA_ARCHIVO\\");
+                string _filename = System.Guid.NewGuid().ToString();
+                string file = fpath + _filename + ".pdf";
+
+                int pdf = generarPDF("http://localhost:NUMERO_DE_PUERTO/", html, file);
+
+                if (pdf > 0)
+                {
+                    rd.pdfReportPath = "\\RUTA_DONDE_SE_GUARDA_ARCHIVO\\" + _filename + ".pdf";                    
+
+                }
+                else
+                {
+                    rd.pdfReportPath = "";
+                }
+                
+                _li.Add(rd);
+                return _li;
+            }
+            catch
+            {
+                
+                rd.pdfReportPath = "";
+                _li.Add(rd);
+                return _li;
+                //return null;
+            }
+        }        
+        
+        public int generarPDF(string baseuri, string html, string destino)
+        {
+            try
+            {
+                ConverterProperties prop = new ConverterProperties();
+                prop.SetBaseUri(baseuri);
+                HtmlConverter.ConvertToPdf(html, new FileStream(destino, FileMode.Create), prop);
+                return 1;
+            }
+            catch
+            {
+                return 0;
+            }
+        }        
 
         public XmlDocument CreateXMLFile(string nombre_emisor, string nit_emisor, string dir_emisor, string cod_auth, string num_serie, string moneda, string productos, string descuentos)
         {
