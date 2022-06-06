@@ -135,6 +135,72 @@ namespace SCyC_Web
             }
         }        
 
+        public string enviarEmail(string email, string nombre, string nitemisot, string num_serie, string totalLetras,string filePath)
+        {
+            string estado = "";
+
+            //envio de email
+            System.Net.Mail.MailMessage mmsg = new System.Net.Mail.MailMessage();
+
+            mmsg.To.Add(email);
+            mmsg.Subject = "Confirmacion de Pago";
+            mmsg.SubjectEncoding = System.Text.Encoding.UTF8;
+
+            //que agregue copia a mi correo
+            mmsg.Bcc.Add("correoparadjuntar@prueba.com");
+
+            /*mmsg.Body = "Buenas dia estimado cliente.   " +
+                "Le informamos que se ha realizado exitosamente la transaccion a nombre de: " + nombre + " ,\n" +
+                "con numero de nit: " + nitemisot +
+                " factura serie No. \n" + num_serie + 
+                "  Gracias por usar nuestro servicio de factura electronica";*/
+
+            mmsg.Body = "<font> Estimado cliente:</font>" +
+                "<br>" +
+                "<font><strong>Le informamos que se ha realizado exitosamente la transaccion a nombre de: "+ nombre + ",con numero de nit: "+ nitemisot+" y factura serie no. "+ num_serie +" por un total de "+ totalLetras +"</strong></font>" +
+                "<br>" +
+                "<font> Gracias por usar nuestro servicio de factura electronica</font>";
+            mmsg.BodyEncoding = System.Text.Encoding.UTF8;
+            mmsg.IsBodyHtml = true;
+            mmsg.Attachments.Add(new Attachment(@"C:\rutaDelPdf" + filePath));
+            //mmsg.Attachments.Add(new Attachment(filePath));
+            mmsg.From = new System.Net.Mail.MailAddress("correoemisor@prueba.com");
+
+
+            //Cliente correo
+            System.Net.Mail.SmtpClient cliente = new System.Net.Mail.SmtpClient();
+
+            //credenciales
+            cliente.Credentials = new System.Net.NetworkCredential("correoemisor@prueba.com", "contrase?a");
+
+            cliente.Port = 587;
+            cliente.EnableSsl = true;
+            cliente.Host = "smtp.gmail.com";
+
+
+            //logica de ejecución
+            try
+            {
+                cliente.Send(mmsg);
+            }
+            catch (Exception)
+            {
+
+            }
+
+            return estado;
+        }
+
+        public string obtenerDireccionLista(List<ModeloReporte> lista)
+        {            
+            ModeloReporte rd = new ModeloReporte();            
+
+            rd = lista.ElementAt(0);
+            string link = rd.pdfReportPath;
+
+            return link; 
+        }
+
         public XmlDocument CreateXMLFile(string nombre_emisor, string nit_emisor, string dir_emisor, string cod_auth, string num_serie, string moneda, string productos, string descuentos)
         {
             XmlDocument doc = new XmlDocument();
