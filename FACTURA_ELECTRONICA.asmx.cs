@@ -35,15 +35,19 @@ namespace SCyC_Web
         {
             //string DTE = "";
             XmlDocument DTE = CreateXMLFile(nombre_emisor, nit_emisor, dir_emisor, cod_auth, num_serie, moneda, productos, descuentos);
-            
+
             //Se guarda en la base de datos
             guardarDatosBd(num_serie, nombre_emisor, cod_auth, Serializar(DTE));
 
             //se envía correo
             string _total = "";
             string totalLetras = "";
-            XmlNode MyNode = DTE.SelectSingleNode("Factura_DTE/Productos/Total");
+            string _totalsindesc = "";
+            XmlNode MyNode = DTE.SelectSingleNode("Factura_DTE/Productos/Total_con_descuento");
             _total = MyNode.InnerText;
+
+            XmlNode MyNode3 = DTE.SelectSingleNode("Factura_DTE/Productos/Total_sin_descuento");
+            _totalsindesc = MyNode3.InnerText;
 
             XmlNode MyNode2 = DTE.SelectSingleNode("Factura_DTE/Productos/Total_en_Letras");
             totalLetras = MyNode2.InnerText;
@@ -52,10 +56,10 @@ namespace SCyC_Web
             List<ModeloReporte> _li = new List<ModeloReporte>();
             ModeloReporte rd = new ModeloReporte();
 
-            _li = generarFacturaPDF(nombre_emisor, nit_emisor, cod_auth, num_serie, descuentos, email, _total);            
-            enviarEmail(email, nombre_emisor, nit_emisor,num_serie, totalLetras, obtenerDireccionLista(_li));
+            _li = generarFacturaPDF(nombre_emisor, nit_emisor, dir_emisor, cod_auth, num_serie, descuentos, email, _total, _totalsindesc, totalLetras);
+            enviarEmail(email, nombre_emisor, nit_emisor, num_serie, totalLetras, obtenerDireccionLista(_li));
 
-            return DTE;            
+            return DTE;        
         }
 
         //registrar facturas
@@ -80,7 +84,7 @@ namespace SCyC_Web
         }
         //creacion de PDF's
         [WebMethod]
-        public List<ModeloReporte> generarFacturaPDF(string nombre_emisor, string nit_emisor, string cod_auth, string num_serie, string descuentos, string email, string _total)
+        public List<ModeloReporte> generarFacturaPDF(string nombre_emisor, string nit_emisor, string dir_emisor, string cod_auth, string num_serie, string descuentos, string email, string _total, string _totalsindesc, string totalLetras)
         {
             List<ModeloReporte> _li = new List<ModeloReporte>();
             ModeloReporte rd = new ModeloReporte();
@@ -89,7 +93,7 @@ namespace SCyC_Web
             {
                 string html = "";
                 //ES EL HTML DE LA FACTURA
-                html = @"<!DOCTYPE html><html><head> <meta charset='utf-8'/> <title></title> <style>body{margin-top: 20px;}</style></head><body> <div bgcolor='#f6f6f6' style='color: #333; height: 100%; width: 100%;' height='100%' width='100%'> <table bgcolor='#f6f6f6' cellspacing='0' style='border-collapse: collapse; padding: 40px; width: 100%;' width='100%'> <tbody> <tr> <td width='5px' style='padding: 0;'></td><td style='clear: both; display: block; margin: 0 auto; max-width: 600px; padding: 10px 0;'> <table width='100%' cellspacing='0' style='border-collapse: collapse;'> <tbody> <tr> <td style='padding: 0;'> <a href='#' style='color: #348eda;' target='_blank'> <img src='//ssl.gstatic.com/accounts/ui/logo_2x.png' alt='Bootdey.com' style='height: 50px; max-width: 100%; width: 157px;' height='50' width='157'/> </a> </td><td style='color: #999; font-size: 12px; padding: 0; text-align: right;' align='right'> Empresa Facturacion<br/> FACTURA#" + num_serie + "<br/> Cod Auth: " + cod_auth + " </td></tr></tbody> </table> </td><td width='5px' style='padding: 0;'></td></tr><tr> <td width='5px' style='padding: 0;'></td><td bgcolor='#FFFFFF' style='border: 1px solid #000; clear: both; display: block; margin: 0 auto; max-width: 600px; padding: 0;'> <table width='100%' style='background: #f9f9f9; border-bottom: 1px solid #eee; border-collapse: collapse; color: #999;'> <tbody> <tr> <td width='50%' style='padding: 20px;'><strong style='color: #333; font-size: 24px;'>" + nombre_emisor + "</strong> Nit: " + nit_emisor + " </td><td align='right' width='50%' style='padding: 20px;'>Email: <span class='il'>" + email + "</span></td></tr></tbody> </table> </td><td style='padding: 0;'></td><td width='5px' style='padding: 0;'></td></tr><tr> <td width='5px' style='padding: 0;'></td><td style='border: 1px solid #000; border-top: 0; clear: both; display: block; margin: 0 auto; max-width: 600px; padding: 0;'> <table cellspacing='0' style='border-collapse: collapse; border-left: 1px solid #000; margin: 0 auto; max-width: 600px;'> <tbody> <tr> <td valign='top' style='padding: 20px;'> <h3 style=' border-bottom: 1px solid #000; color: #000; font-family: 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; font-size: 18px; font-weight: bold; line-height: 1.2; margin: 0; margin-bottom: 15px; padding-bottom: 5px; '> DESCRIPCION </h3> <table cellspacing='0' style='border-collapse: collapse; margin-bottom: 40px;'> <tbody> <tr> <td style='padding: 5px 60px;'>Compra realizada en linea </td><td align='right' style='padding: 5px 0;'>Q" + _total + "</td></tr><tr> <td style='padding: 5px 0;'>---</td><td align='right' style='padding: 5px 0;'>---</td></tr><tr> <td style='padding: 5px 0;'>Descuentos</td><td align='right' style='padding: 5px 0;'>Q" + descuentos + "</td></tr><tr> <td style='border-bottom: 2px solid #000; border-top: 2px solid #000; font-weight: bold; padding: 5px 0;'>Total Pagado</td><td align='right' style='border-bottom: 2px solid #000; border-top: 2px solid #000; font-weight: bold; padding: 5px 0;'>Q" + _total + "</td></tr></tbody> </table> </td></tr></tbody> </table> </td><td width='5px' style='padding: 0;'></td></tr><tr style='color: #666; font-size: 12px;'> <td width='5px' style='padding: 10px 0;'></td><td style='clear: both; display: block; margin: 0 auto; max-width: 600px; padding: 10px 0;'> <table width='100%' cellspacing='0' style='border-collapse: collapse;'> <tbody> <tr> <td width='40%' valign='top' style='padding: 10px 0;'> <h4 style='margin: 0;'>Dudas?</h4> <p style='color: #666; font-size: 12px; font-weight: normal; margin-bottom: 10px;'> Envie correo a <a href='#' style='color: #666;' target='_blank'> soporte@infile.com </a> con sus preguntas. </p></td><td width='10%' style='padding: 10px 0;'>&nbsp;</td><td width='40%' valign='top' style='padding: 10px 0;'> <h4 style='margin: 0;'><span class='il'>ING_SOFTWARE</span> Grupo 2</h4> <p style='color: #666; font-size: 12px; font-weight: normal; margin-bottom: 10px;'> <a href='#'>Antigua Guatemala, Antigua</a> </p></td></tr></tbody> </table> </td><td width='5px' style='padding: 10px 0;'></td></tr></tbody> </table> </div></body></html>";
+                html = @"<!DOCTYPE html><html lang='es'><head> <meta charset='UTF-8'> <meta http-equiv='X-UA-Compatible' content='IE=edge'> <meta name='viewport' content='width=device-width, initial-scale=1.0'> <style>html{box-sizing: border-box; font-family: sans-serif; font-size: 16px;}*,*::after,*::before{box-sizing: inherit;}.factura{margin-left: auto; margin-right: auto; /* border: medium solid #000; */ width: 700px; height: 900px;}.cabecera-factura{background-color: #65ccd3; border-radius: 0.25rem; text-align: center; height: 45px; /* padding-top: 0.02rem; */}.datos-emisor{background-color: #eee; border: thin solid #000; border-radius: 0.5rem; margin: 0.5rem; padding: 1rem; font-weight: bolder;}.datos-emisor input{border: none; border-bottom: medium solid #000;}.datos-emisor input:nth-of-type(odd){width: 70%;}.factura h3{padding-left: 2rem;}.article-col-3{background-color: #eee; font-size: 0.85rem; border: 1px solid #000; border-radius: 0.5rem; width: 699px; height: 70px;}.article-col-3 > *{padding: 0.5rem; height: 100%; box-sizing: border-box; width: 232px; float: left;}.article-col-3 input{border: none; border-bottom: thin solid #000;}.item input{margin-top: 0.35rem;}.datos-venta{height: 450px; width: 696px; border: thin solid 000;}.encabezado-venta{/* border: thin solid cyan; */ width: 100%; height: 40px;}.item-1{border: thin solid #000;}.item-cantidad,.item-total{width: 90px; height: 100%;}.encabezado-venta > *{padding: 0.5rem; height: 100%; box-sizing: border-box; float: left; color: #fff; background-color: #1c3461; font-style: bold;}.item-descripcion{width: 513px; padding-left: 3rem;}.descripcion-venta{/* border: thin solid green; */ width: 100%; height: 300px;}.txt-area{display: block; /* border: none;*/ border: thin solid #000; resize: none; height: 100%;}.area-cantidad,.area-total{width: 90px;}.area-descripcion{width: 513px;}.descripcion-venta > *{padding: 0.5rem; border-radius: 0; height: 100%; box-sizing: border-box; float: left;}.descuento-venta{/* border: thin solid palevioletred; */ width: 50%; height: 99px; float: right;}.container{border: thin solid #000; height: 100%;}.textos{width: 256px;}.cantidades{width: 90px;}.descuento-venta > *{box-sizing: border-box; float: left;}.textos label{/* border-top: thin solid #000; */ text-align: center; padding: 0.4rem; display: block; height: 33px;}.cantidades label{/* border-top: thin solid #000; */ text-align: center; padding: 0.4rem; display: block; height: 33px;}.textos label:last-child{border-top: thin solid #000;}.cantidades > *{border: none; height: 33px; width: 100%;}.cantidades input:last-child{border-top: thin solid #000; border-bottom: thin solid #000;}.box-correo input{width: 50%; border: none; border-bottom: thin solid #000;}.box-correo{margin-top: 1rem;}</style></head><body> <div class='factura'> <form action=''> <header class='cabecera-factura'> <h1>FACTURA ELECTRONICA ©</h1> </header> <br><article class='article-col-3'> <section class='item'> <label for='txt-codigo'>Código de Autorización </label><br><input type='text' id='txt-codigo' value='" + cod_auth + "'> </section> <section class='item'> <label for='txt-num-serie'>Número de Serie: </label><br><input type='text' id='txt-num-serie' value='" + num_serie + "'> </section> <section class='item'> <label for='txt-moneda'>Moneda: </label><br><input type='text' id='txt-moneda' value='Quetzales'> </section> </article> <h3>Datos del Emisor</h3> <section class='datos-emisor'> <label for='txt-nombre'>Nombre: </label> <input type='text' id='txt-nombre' value='" + nombre_emisor + "'> <br><br><label for='txt-nit'>Nit: </label> <input type='text' id='txt-nit' value='" + nit_emisor + "'> <br><br><label for='txt-direccion'>Dirección: </label> <input type='text' id='txt-direccion' value='" + dir_emisor + "'> </section> <h3>Datos de Venta</h3> <section class='datos-venta'> <article class='encabezado-venta'> <section class='item-1 item-cantidad'>Cantidad</section> <section class='item-1 item-descripcion'>Descripción</section> <section class='item-1 item-total'>Total</section> </article> <section class='descripcion-venta'> <textarea class='txt-area area-cantidad' name='' id='' cols='30' rows='10'>1</textarea> <textarea class='txt-area area-descripcion' name='' id='' cols='30' rows='10'>Compra Realizada en linea, no genera derecho a credito fiscal</textarea> <textarea class='txt-area area-total' name='' id='' cols='30' rows='10'>" + _totalsindesc + "</textarea> </section> <section class='descuento-venta'> <div class='container textos'> <label for='txt-subtotal'>Sub-total</label> <label for='txt-descuento'>Descuento</label> <label for='txt-total'><b>TOTAL</b></label> </div><div class='container cantidades'> <label id='txt-subtotal'>" + _totalsindesc + "</label><label id='txt-descuento'>" + descuentos + "</label><label id='txt-total'>" + _total + "</label><input type='text' name='' id='txt-subtotal' value='" + _totalsindesc + "'> <input type='text' name='' id='txt-descuento' value='" + descuentos + "'> <input type='text' name='' id='txt-total' value='" + _total + "'> </div></section> </section><div class='box-correo'> <label for='txt-correo'><b>Total en letras</b></label> <input type='text' name='' id='txt-totalLetras' value='" + totalLetras + "'> </div><div class='box-correo'> <label for='txt-correo'><b>E-mail:  </b></label>" + email + " <input type='text' name='' id='txt-correo' value='" + email + "'> </div></form> </div></body></html>";
                 
                 string fpath = Server.MapPath("\\RUTA_DONDE_SE_GUARDA_ARCHIVO\\");
                 string _filename = System.Guid.NewGuid().ToString();
@@ -264,6 +268,7 @@ namespace SCyC_Web
             //contador para total
             string total = "";
             double totalDineroProd = 0;
+            double totalDineroProd = 0;
 
             for (int i = 0; i < prods.Count; i++)
             {
@@ -293,10 +298,15 @@ namespace SCyC_Web
                 Array.Clear(descripcion_prod, 0, descripcion_prod.Length);
                 totalDineroProd = totalDineroProd + (cantidad_prod * precio_prod);
             }
+            totalsindesc = totalDineroProd
             totalDineroProd = totalDineroProd - Convert.ToDouble(descuentos);
 
             //agrego total con letras
-            XmlElement totalCompra = doc.CreateElement("Total");
+            XmlElement totalComprasin = doc.CreateElement("Total_sin_descuento");
+            totalComprasin.InnerText = totalsindesc.ToString();
+            producto.AppendChild(totalComprasin);
+
+            XmlElement totalCompra = doc.CreateElement("Total_con_descuento");
             totalCompra.InnerText = totalDineroProd.ToString();
             producto.AppendChild(totalCompra);
 
