@@ -497,6 +497,338 @@ namespace SCyC_Web
 
             return prods;
         }
+        
+        //Administrar usuarios
+        [WebMethod]
+        public string registrarUsuario(string dpi, string nombres, string apellidos, string nit, string direccion, string email)
+        {
+            string estado = "";
+
+            MySqlConnection conexionBD = new MySqlConnection("server = servidor ; database = base_de_datos ; Uid = root ; pwd = Contrase?a");
+
+            //inserto datos a la base de datos
+            conexionBD.Open();
+            MySqlCommand comando = new MySqlCommand("insert into  `base_de_datos`.`usuarios` (dpi, nombres, apellidos, nit, direccion, email) values (@dpi, @nombres, @apellidos, @nit, @direccion, @email)", conexionBD);
+            comando.Parameters.AddWithValue("@dpi", dpi);
+            comando.Parameters.AddWithValue("@nombres", nombres);
+            comando.Parameters.AddWithValue("@apellidos", apellidos);
+            comando.Parameters.AddWithValue("@nit", nit);
+            comando.Parameters.AddWithValue("@direccion", direccion);
+            comando.Parameters.AddWithValue("@email", email);
+
+            try
+            {
+                comando.ExecuteNonQuery();
+                estado = "exito";
+            }
+            catch (Exception)
+            {
+                estado = "error";
+            }
+            conexionBD.Close();
+
+            return estado;
+        }
+
+        [WebMethod]
+        public string eliminarrUsuario(string dpi)
+        {
+            string estado = "";
+
+            try
+            {
+                MySqlConnection conexionBD = new MySqlConnection("server = servidor ; database = base_de_datos ; Uid = root ; pwd = Contrase?a");
+
+                //elimino datos a la base de datos
+                conexionBD.Open();
+                MySqlCommand comando = new MySqlCommand("delete from  `base_de_datos`.`usuarios` where dpi = " + dpi, conexionBD);
+
+                comando.ExecuteNonQuery();
+                estado = "exito";
+                conexionBD.Close();
+            }
+            catch (Exception)
+            {
+                estado = "error";
+            }
+
+            return estado;
+        }
+
+        [WebMethod]
+        public string modificarUsuario(string dpi, string nombres, string apellidos, string nit, string direccion, string email)
+        {
+            string estado = "";
+
+            MySqlConnection conexionBD = new MySqlConnection("server = servidor ; database = base_de_datos ; Uid = root ; pwd = Contrase?a");
+
+            //inserto datos a la base de datos
+            conexionBD.Open();
+            MySqlCommand comando = new MySqlCommand("update `base_de_datos`.`usuarios` set nombres = @nombres, apellidos = @apellidos, nit = @nit, direccion = @direccion, email = @email where dpi = @dpi", conexionBD);
+            comando.Parameters.AddWithValue("@dpi", dpi);
+            comando.Parameters.AddWithValue("@nombres", nombres);
+            comando.Parameters.AddWithValue("@apellidos", apellidos);
+            comando.Parameters.AddWithValue("@nit", nit);
+            comando.Parameters.AddWithValue("@direccion", direccion);
+            comando.Parameters.AddWithValue("@email", email);
+
+            try
+            {
+                comando.ExecuteNonQuery();
+                estado = "exito";
+            }
+            catch (Exception)
+            {
+                estado = "error";
+            }
+            conexionBD.Close();
+
+            return estado;
+        }
+
+        [WebMethod]
+        public XmlDocument consultarUsuario(string dpi)
+        {
+            string estado = "";
+            XmlDocument doc = new XmlDocument();
+            XmlDeclaration declaration = doc.CreateXmlDeclaration("1.0", "utf-8", "no");
+            try
+            {
+                MySqlConnection conexionBD = new MySqlConnection("server = servidor ; database = base_de_datos ; Uid = root ; pwd = Contrase?a");
+
+                //selecciono datos a la base de datos
+                conexionBD.Open();
+                MySqlCommand comando = new MySqlCommand("select * from `base_de_datos`.`usuarios` where dpi = @dpi ", conexionBD);
+                comando.Parameters.AddWithValue("@dpi", dpi);
+
+                MySqlDataReader lector = comando.ExecuteReader();
+                lector.Read();
+
+                string dpiXml = lector.GetString(0);
+                string nombresXml = lector.GetString(1);
+                string apellidosXml = lector.GetString(2);
+                string nitXml = lector.GetString(3);
+                string direccionXml = lector.GetString(4);
+                string emailXml = lector.GetString(5);
+
+                conexionBD.Close();
+
+
+                //creacion de xml                            
+                XmlElement root = doc.CreateElement("Usuario_XML");
+                doc.AppendChild(root);
+                XmlNode raiz = doc.SelectSingleNode("Usuario_XML");
+
+                XmlElement dpi_Xml = doc.CreateElement("DPI");
+                dpi_Xml.InnerText = dpiXml;
+                raiz.AppendChild(dpi_Xml);
+
+                XmlElement nombre_Xml = doc.CreateElement("NOMBRE");
+                nombre_Xml.InnerText = nombresXml;
+                raiz.AppendChild(nombre_Xml);
+
+                XmlElement apellidos_Xml = doc.CreateElement("APELLIDOS");
+                apellidos_Xml.InnerText = apellidosXml;
+                raiz.AppendChild(apellidos_Xml);
+
+                XmlElement nit_Xml = doc.CreateElement("NIT");
+                nit_Xml.InnerText = nitXml;
+                raiz.AppendChild(nit_Xml);
+
+                XmlElement direccion_Xml = doc.CreateElement("DIRECCION");
+                direccion_Xml.InnerText = direccionXml;
+                raiz.AppendChild(direccion_Xml);
+
+                XmlElement email_Xml = doc.CreateElement("DIRECCION");
+                email_Xml.InnerText = emailXml;
+                raiz.AppendChild(email_Xml);
+
+                XmlElement info_Xml = doc.CreateElement("ESTADO");
+                info_Xml.InnerText = "Exito";
+                raiz.AppendChild(info_Xml);
+
+
+            }
+            catch (Exception)
+            {
+                XmlElement root = doc.CreateElement("Usuario_XML");
+                doc.AppendChild(root);
+                XmlNode raiz = doc.SelectSingleNode("Usuario_XML");
+
+                XmlElement info_Xml = doc.CreateElement("ESTADO");
+                info_Xml.InnerText = "Fallo";
+                raiz.AppendChild(info_Xml);
+            }
+
+            return doc;
+        }
+        
+        //Administrar Facturas una factura, solo se crea, se elimina y se consulta, no se puede modificar
+        //consultar facturas
+        [WebMethod]
+        public XmlDocument consultarFactura(string numSerie)
+        {
+            string factura = "";
+
+            XmlDocument doc = new XmlDocument();
+            XmlDeclaration declaration = doc.CreateXmlDeclaration("1.0", "utf-8", "no");
+
+            try
+            {
+                MySqlConnection conexionBD = new MySqlConnection("server = servidor ; database = base_de_datos ; Uid = root ; pwd = Contrase?a");
+
+                //selecciono datos a la base de datos
+                conexionBD.Open();
+                MySqlCommand comando = new MySqlCommand("select * from `base_de_datos`.`factura` where numSerie = @numSerie ", conexionBD);
+                comando.Parameters.AddWithValue("@numSerie", numSerie);
+
+                MySqlDataReader lector = comando.ExecuteReader();
+                lector.Read();
+
+                string numSerieXml = lector.GetString(0);
+                string nombreEmisorXml = lector.GetString(1);
+                string codAutorizacionXml = lector.GetString(2);
+                string xmlFacturaXml = lector.GetString(3);
+
+                conexionBD.Close();
+
+                //creacion de xml                            
+                XmlElement root = doc.CreateElement("Factura_XML");
+                doc.AppendChild(root);
+                XmlNode raiz = doc.SelectSingleNode("Factura_XML");
+
+                XmlElement numSerie_Xml = doc.CreateElement("numSerie");
+                numSerie_Xml.InnerText = numSerieXml;
+                raiz.AppendChild(numSerie_Xml);
+
+                XmlElement nombreEmisor_Xml = doc.CreateElement("nombreEmisor");
+                nombreEmisor_Xml.InnerText = nombreEmisorXml;
+                raiz.AppendChild(nombreEmisor_Xml);
+
+                XmlElement codAutorizacion_Xml = doc.CreateElement("codAutorizacion");
+                codAutorizacion_Xml.InnerText = codAutorizacionXml;
+                raiz.AppendChild(codAutorizacion_Xml);
+
+                XmlElement xmlFacturaBase64_Xml = doc.CreateElement("xmlFacturaBase64");
+                xmlFacturaBase64_Xml.InnerText = xmlFacturaXml;
+                raiz.AppendChild(xmlFacturaBase64_Xml);
+
+                XmlElement info_Xml = doc.CreateElement("ESTADO");
+                info_Xml.InnerText = "Exito";
+                raiz.AppendChild(info_Xml);
+            }
+            catch
+            {
+                XmlElement root = doc.CreateElement("Factura_XML");
+                doc.AppendChild(root);
+                XmlNode raiz = doc.SelectSingleNode("Factura_XML");
+
+                XmlElement info_Xml = doc.CreateElement("ESTADO");
+                info_Xml.InnerText = "Fallo";
+                raiz.AppendChild(info_Xml);
+            }
+            /*
+            XmlDocument doc = new XmlDocument();
+            XmlDeclaration declaration = doc.CreateXmlDeclaration("1.0", "utf-8", "no");
+            try
+            {
+                MySqlConnection conexionBD = new MySqlConnection("server = servidor ; database = base_de_datos ; Uid = root ; pwd = Contrase?a");
+
+                //selecciono datos a la base de datos
+                conexionBD.Open();
+                MySqlCommand comando = new MySqlCommand("select * from `base_de_datos`.`usuarios` where dpi = @dpi ", conexionBD);
+                comando.Parameters.AddWithValue("@dpi", dpi);
+
+                MySqlDataReader lector = comando.ExecuteReader();
+                lector.Read();
+
+                string dpiXml = lector.GetString(0);
+                string nombresXml = lector.GetString(1);
+                string apellidosXml = lector.GetString(2);
+                string nitXml = lector.GetString(3);
+                string direccionXml = lector.GetString(4);
+                string emailXml = lector.GetString(5);
+
+                conexionBD.Close();
+
+
+                //creacion de xml                            
+                XmlElement root = doc.CreateElement("Usuario_XML");
+                doc.AppendChild(root);
+                XmlNode raiz = doc.SelectSingleNode("Usuario_XML");
+
+                XmlElement dpi_Xml = doc.CreateElement("DPI");
+                dpi_Xml.InnerText = dpiXml;
+                raiz.AppendChild(dpi_Xml);
+
+                XmlElement nombre_Xml = doc.CreateElement("NOMBRE");
+                nombre_Xml.InnerText = nombresXml;
+                raiz.AppendChild(nombre_Xml);
+
+                XmlElement apellidos_Xml = doc.CreateElement("APELLIDOS");
+                apellidos_Xml.InnerText = apellidosXml;
+                raiz.AppendChild(apellidos_Xml);
+
+                XmlElement nit_Xml = doc.CreateElement("NIT");
+                nit_Xml.InnerText = nitXml;
+                raiz.AppendChild(nit_Xml);
+
+                XmlElement direccion_Xml = doc.CreateElement("DIRECCION");
+                direccion_Xml.InnerText = direccionXml;
+                raiz.AppendChild(direccion_Xml);
+
+                XmlElement email_Xml = doc.CreateElement("DIRECCION");
+                email_Xml.InnerText = emailXml;
+                raiz.AppendChild(email_Xml);
+
+                XmlElement info_Xml = doc.CreateElement("ESTADO");
+                info_Xml.InnerText = "Exito";
+                raiz.AppendChild(info_Xml);
+
+
+            }
+            catch (Exception)
+            {
+                XmlElement root = doc.CreateElement("Usuario_XML");
+                doc.AppendChild(root);
+                XmlNode raiz = doc.SelectSingleNode("Usuario_XML");
+
+                XmlElement info_Xml = doc.CreateElement("ESTADO");
+                info_Xml.InnerText = "Fallo";
+                raiz.AppendChild(info_Xml);
+            }*/
+
+            return doc;
+        }
+
+        [WebMethod]
+        public string eliminarFactura(string numSerie, string nombreEmisor)
+        {
+            string estado = "";
+
+            try
+            {
+                MySqlConnection conexionBD = new MySqlConnection("server = servidor ; database = base_de_datos ; Uid = root ; pwd = Contrase?a");
+
+                //elimino datos a la base de datos
+                conexionBD.Open();
+                MySqlCommand comando = new MySqlCommand("delete from  `base_de_datos`.`factura` where numSerie = @numSerie and nombreEmisor= @nombreEmisor", conexionBD);
+                comando.Parameters.AddWithValue("@numSerie", numSerie);
+                comando.Parameters.AddWithValue("@nombreEmisor", nombreEmisor);
+
+                comando.ExecuteNonQuery();
+                estado = "exito";
+                conexionBD.Close();
+            }
+            catch (Exception)
+            {
+                estado = "error";
+            }
+
+            return estado;
+        }       
+        
+        
     }
 
 }
